@@ -1,0 +1,35 @@
+---
+title: "Time to Event Analysis"
+author: "Tabitha K. Peter"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r source_calls}
+
+```
+
+```{r descriptives}
+
+```
+
+```{r km_plot}
+
+```
+
+```{r median_survival}
+
+```
+
+```{r nth_year_survival}
+
+```
+
+```{r cox_model}
+
+```
+
