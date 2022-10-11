@@ -1,18 +1,25 @@
 ---
-title: "Time to Event Analysis"
+title: "An overview of time-to-event analysis for dental researchers"
 author: "Tabitha K. Peter"
-date: "`r Sys.Date()`"
-output: html_document
-editor_options: 
-  chunk_output_type: console
+date: \today
+output: pdf_document
+bibliography: references/cmr.bib
+header-includes: 
+ - \usepackage{bbm}
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE,
-                      message = FALSE)
+knitr::opts_chunk$set(
+	message = FALSE,
+	warning = FALSE,
+	cache = TRUE,
+	collapse = TRUE
+)
 ```
 
-Hello! This document is a supplement to the tutorial, "An overview of time-to-event analysis for dental researchers." The purpose of this companion file is to provide the `R` code used to create the main tutorial. The titles and subheadings in this file provide a brief description of each code chunk to cue the reader in connecting this code with the article. 
+Welcome to the tutorial "An overview of time-to-event analysis for dental researchers." The objective of this tutorial is to explain the foundational concepts of time-to-event analysis for an audience of dental researchers. 
+
+These foundational concepts are illustrated using an extended example from the dental research literature. See [this link](https://www.sciencedirect.com/science/article/pii/S000281772100547X?casa_token=criQNRkNLBEAAAAA:nL6pVTDH07s1jyh5Gf_J1Ffsz2JDTmDakeGvRlgAB_rKSkjVynSdt5c_KDlZw7hlDphCLKoH) for the full text of this published work. 
 
 
 # Set up 
@@ -280,3 +287,4 @@ coxph(Surv(time = Time, event = Event) ~ No_Cases + Age + Gender + CRA + Tooth_T
 
 ```
 
+## References 
