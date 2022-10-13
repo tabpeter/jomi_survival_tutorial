@@ -6,25 +6,58 @@ output: pdf_document
 bibliography: references/cmr.bib
 header-includes: 
  - \usepackage{bbm}
+ - \usepackage{unicode}
+ - \usepackage{hyperref}
+ - \hypersetup{colorlinks=true,citecolor=blue,linkcolor=blue,linktocpage=true}
+
 ---
+
+# Introduction 
+
+Welcome to the tutorial "An overview of time-to-event analysis for dental researchers." The objective of this tutorial is to explain the foundational concepts of time-to-event analysis for an audience of dental researchers. After introducing some key terms, I will explain the essential concepts of time-to-event analysis using a data set from the dental research literature. See [this link](https://www.sciencedirect.com/science/article/pii/S000281772100547X?casa_token=criQNRkNLBEAAAAA:nL6pVTDH07s1jyh5Gf_J1Ffsz2JDTmDakeGvRlgAB_rKSkjVynSdt5c_KDlZw7hlDphCLKoH) for the full text of the publication based on a time-to-event analysis of this data set. 
+
+# Word bank 
+
+We begin our exploration of time-to-event analysis by defining some terms. Notice that several of these words are part of the common vernacular, but have a particular meaning within the context of time-to-event analysis.  
+
+ - **Observation**: The unit of study. These units could be people, as in the case of a clinical investigation where each unit of study is a patient. An observation could also be a dental implant, a set of dentures, or a plate of bacteria. Regardless of the research context, the observation is studied by the researcher for a specified amount of time. For each observation, there is a time of entry into the study, and a time of last observation. In addition to these dates/times, information about the details of an observation are also recorded. 
+ 
+  - **Time**: The units of time that have passed since an observation's entry into the study. In time-to-event analysis, the date/time of entry into the study is labeled as 0, and the subsequent units of time (e.g. days, weeks, years) count forward from that starting time. For example, suppose the observations in my study are patients treated in a specific dental clinic, and I am recording time in years. If Patient A enters the study in 2018 and I study that patient until 2022, then I would call 2018 "year 0" and 2022 "year 3." Note that the time of entry into the study often differs among observations. Returning to our example, suppose Patient B enters my study in 2019. In this case, "time 0" for Patient B is 2019. When I make generalizations about all the patients in the study, I would reference "time 0", understanding that this is different calendar years for patients A and B. 
+  
+  - **Event**: The occasion, occurrence, or sign related to the outcome of interest. Every scientific investigation should have an established research objective that informs the choice of an outcome. The choice of this outcome informs the choice of event for a time-to-event analysis. Suppose I want to compare different kinds of dentures to assess which ones are more durable (i.e. which dentures last the longest).  In this case, I would need to define what it means for a denture to "last" - perhaps this means that the denture still fits well and does not require replacement. For this example, the outcome of interest could be the amount of time until replacement, and the "event" could be defined as replacement. The observations in the study would be dentures, and the goal would be to study the dentures over time and record the dates and details of those which require replacement. We would say that the dentures which need to be replaced are the 'observations which have an event.'  
+  
+  - **Censored**: The state of observations which do **not** have an event recorded during the time of the study. We describe such observations as "being censored", as opposed to those observations which have events. Censoring can occur when an observation is lost to follow up or does not have an event before the end of a study. Suppose again that I am studying different kinds of dentures to compare their longevity. If a denture is still functioning at the time when I stop collecting data, then I would record this as a censored observation. If a denture is lost to follow up (meaning that the patient with the denture does not return to my clinic after enrolling in the study), I would also mark that denture as censored. In both cases, I would not know how long the denture lasted. 
+  
+  - **Survival time**: The time elapsed from the time of entry into the study until the time of either an event or censoring. Consider a denture that I begin studying in 2013 and which needs a replacement in 2021. I would say this denture had an event, and it had a survival time of 8 years. 
+  
+  - **Median survival time**: The time by which approximately half of all the observations in a study had experienced an event. For example, suppose I am studying 50 patients with full dentures, and the event of interest is replacing those dentures. If after 9 years, 25 of those dentures have been replaced, I would report 9 years as the median survival time. 
+  
+  - **Nth year survival (e.g. 3 year survival)**: The proportion of observations that have not had an event after 'n' units of time (where 'n' can be any number). Back to the denture example, suppose I am interested in studying 10 year survival in a data set of 50 dentures. If after 10 years, 15 dentures (30\% of 50) have still not been replaced, then I would report 10-year survival as 30\%. 
+  
+  - **Kaplan-Meier plot**: This name is a reference to the foundational publication by @Kaplan1958 and the work generated from its ideas. In brief, Kaplan and Meier presented a method for working with data that has censoring. Kaplan-Meier plots are curves that can be used to illustrate the time-to-event phenomena over time. These plots represent both events and censored observations. We will examine some examples of these curves later in the tutorial. 
+  
+  - **Cox (proportional hazards) model**: This is a reference to the foundational publication by @Cox1972. In brief, Cox proposed a method for a regression-like analysis which is specially crafted for time-to-event data. The Cox regression model lets us make generalizations about the impact of independent variables on the outcome of interest using hazard ratios. We will see an example of this kind of model later in the tutorial. 
+  
+
+
+# Extended example with dental data  
+
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
 	message = FALSE,
-	warning = FALSE,
-	cache = TRUE,
+	echo = FALSE,
+	cache = FALSE,
 	collapse = TRUE
 )
 ```
 
-Welcome to the tutorial "An overview of time-to-event analysis for dental researchers." The objective of this tutorial is to explain the foundational concepts of time-to-event analysis for an audience of dental researchers. 
-
-These foundational concepts are illustrated using an extended example from the dental research literature. See [this link](https://www.sciencedirect.com/science/article/pii/S000281772100547X?casa_token=criQNRkNLBEAAAAA:nL6pVTDH07s1jyh5Gf_J1Ffsz2JDTmDakeGvRlgAB_rKSkjVynSdt5c_KDlZw7hlDphCLKoH) for the full text of this published work. 
 
 
-# Set up 
+## Prepare the data set 
 
-First, load the data set 
+First, load the data set into `R`. 
 
 ```{r source_calls}
 source("R/R.R")
@@ -68,7 +101,7 @@ cmr <- cmr %>%
 ```
 
 
-# Descriptive analysis 
+## Descriptive analysis 
 
 Once I have verified that the data set is ready for analysis, I create a "Table 1" that summarizes each variable in the data set. 
 
@@ -97,7 +130,7 @@ summary(table1) %>%
 ```
 
 
-## Timeline chart 
+### Timeline chart 
 
 To illustrate the stories of specific patients, I draw a timeline chart (some people call this type of graph a "swimlane diagram"). 
 
@@ -150,9 +183,9 @@ km2
 ```
 
 
-# Analysis 
+## Analysis 
 
-## Median survival 
+### Median survival 
 
 **Remember:** The median survival time is **not** just the median of all the survival time values. When we are talking about median survival, we have to account for the fact that some repairs are censored -- we do not know everything about each repair in our study! The Kaplan-Meier method for calculating median survival takes censoring into account. We can do this calculation in `R` with the `survfit` function from the `survival` package. 
 
@@ -173,7 +206,7 @@ s1_median[c("median", "0.95LCL", "0.95UCL")] %>%
        ))
 ```
 
-## Nth year survival 
+### Nth year survival 
 
 We are also often interested to estiamte the survival probability of a repair making it __ number of years. Below, I use the same `survfit` function to estimate 1, 3, and 5 year survival with the KM method. 
 
@@ -198,7 +231,7 @@ nth_year_survival(five_yr_surv) %>% kable(digits = 3)
 ```
 
 
-## Plot 3 year survival probability and median survival time 
+### Plot 3 year survival probability and median survival time 
 
 To show the difference between estimating __ year survival and estimating the median survival time, I can plot these both on the same plot. 
 
@@ -287,4 +320,4 @@ coxph(Surv(time = Time, event = Event) ~ No_Cases + Age + Gender + CRA + Tooth_T
 
 ```
 
-## References 
+# References 
