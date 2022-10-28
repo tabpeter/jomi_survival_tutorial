@@ -61,10 +61,10 @@ word_bank <- tibble(terms = c("Observation", "Time", "Event", "Censored",
                              ))
 
 (word_bank %>%
-  kbl(booktabs=T,
+  kable(booktabs=T,
       linesep="",
       col.names = c("Terms", "Brief definition")) %>%
-  kable_paper(full_width=F) %>%
+  # kable_paper(full_width=F) %>%
   column_spec(1:2,
               color="black",
               background = spec_color(1:5, alpha = 0.5)))
@@ -91,7 +91,6 @@ We are interested in studying how several factors impact the lifespan of these C
   - Number of surfaces: How many surfaces were involved in the CMR
   - Root canal treatment (RCT): Was the tooth receiving the CMR root canal treated? 
   - Crown type: The type of crown used for the CMR
-  - Clinic: The clinic in which the CMR was placed 
   - Provider: Whether the provider placing the CMR was a faculty member or a student
 
 ## Prepare the data set 
@@ -139,28 +138,9 @@ cmr <- cmr %>%
 ## Descriptive analysis 
 \label{sec:descriptive}
 
-Once I have verified that the data set is ready for analysis, I create a "Table 1" that summarizes each variable in the data set. 
-
-TODO: Add an explanation of the summary stats (esp for numerics). Change numeric summary to be median (range) instead of median (IQR)
+Once I have verified that the data set is ready for analysis, I create a "Table 1" that summarizes each variable in the data set. In Table 1, numeric values (like Age) are summarized with their median and range (min, max) values. Categorial variables are summarized by their counts and percentages. 
 
 ```{r descriptives}
-
-# Create Table 1 
-# table1 <- tableby(~ .,
-#                   data = cmr %>%
-#                     dplyr::select(-c(RecordID, Event, No_Cases, Tooth_Number,
-#                                      Date_Repair, End_Date, Failure_Date)),
-#                   control = tableby.control(
-#                     test = FALSE
-#                   )
-#                   )
-
-# Print out Table 1 in a readable format 
-# summary(table1) %>% 
-#   kable(digits = 2,
-#         format = "pipe",
-#         caption = "Table 1: Description of Data")
-
 table1_labels <- list(
   Age ~ "Age (yrs)",
   Gender ~ "Sex",
@@ -172,7 +152,7 @@ table1_labels <- list(
   No_Surfaces ~ "Number of surfaces",
   RCT ~ "Root canal treated?",
   Crown_Type ~ "Crown type",
-  Clinic ~ "Clinic",
+  # Clinic ~ "Clinic",
   Provider_Type ~ "Provider"
 )
 
@@ -181,12 +161,16 @@ table1 <- tbl_summary(data = cmr %>%
                                      Date_Repair, End_Date, Failure_Date,
                                      Failure, Last_exam, Failure_Reason)),
             digits = everything() ~ 2,
-            label = table1_labels)
+            label = table1_labels,
+            statistic = list(
+              all_continuous() ~ "{median} ({min}, {max})",
+              all_categorical() ~ "{n} ({p}%)")
+            )
 
 
 table1 %>%
   as_kable_extra(format = "latex", 
-                 booktabs = "TRUE",
+                 booktabs = TRUE,
                  caption = "Table 1: Description of data",
                  longtable = TRUE) %>%
   kable_styling(latex_options = c("HOLD_position", "striped", "repeat_header"))
@@ -199,7 +183,7 @@ table1 %>%
 
 To illustrate the stories of specific patients, I drew a timeline chart (some people call this type of graph a "swimlane diagram"). This kind of diagram lets us put a loupe on our data and see what is going on for an individual patient. 
 
-```{r timeline}
+```{r timeline, fig.cap="Figure 1: Timeline chart"}
 # Create a timeline chart 
 set.seed(52246) # this means the same patients are chosen each time I run this code
 example_patients <- sample(1:nrow(cmr), size = 5)
@@ -228,7 +212,7 @@ Patient 150 is the only patient in the timeline chart that has an 'event' marker
 
 To get an idea of the overall trajectory of the time that the crown margin repairs are lasting, a create a Kaplan-Meier (KM) plot. As time goes on, there are fewer repairs upon which to draw estimates, so our estimates become more uncertain at later years. To visualize this uncertainty, we can add confidence intervals to the plots. A risk table provides details to supplement the general pattern illustrated in the KM plot. 
 
-```{r km_plot}
+```{r km_plot, fig.cap="Figure 2: Kaplan-Meier plot"}
 # Kaplan Meier (KM) curve 
 
 km1 <- survfit2(Surv(time = Time, event = Event) ~ 1, data = cmr) %>%
@@ -298,7 +282,7 @@ s1_median[c("median", "0.95LCL", "0.95UCL")] %>%
          "95% CI (lower)",
          "95% CI (upper)"
        ),
-       caption = "Median survival time",
+       caption = "Table 2: Median survival time",
        format = "latex",
        booktabs = TRUE) %>%
   kable_styling(latex_options = c("HOLD_position"))
@@ -319,6 +303,7 @@ five_yr_surv_table <- nth_year_survival(five_yr_surv)
 five_yr_surv_table %>% 
   kable(digits = 3,
         format = "latex",
+        caption = "Table 3: 1, 3, and 5 year survival",
         booktabs = TRUE) %>%
   kable_styling(latex_options = c("HOLD_position", "scale_down")) %>%
   kable_paper(full_width=F) %>%
@@ -335,33 +320,72 @@ To show the difference between estimating __ year survival and estimating the me
 
 To keep this illustration from being too visually 'busy', I will leave off the confidence intervals. 
 
-```{r combined_plot}
+```{r combined_plot, fig.cap="Figure 3: Median survival v. 3-year survival"}
 
 # start with KM curve 
+# km1 + 
+#   # visualize 3 year survival (green)
+#   geom_segment(x = 3, xend = 3,
+#                y = 0, yend = five_yr_surv$surv[2], 
+#                size = 1, 
+#                arrow = arrow(),
+#                colour = "#5ec962") +
+#   geom_segment(x = 3, xend = 0,
+#                y = five_yr_surv$surv[2], yend = five_yr_surv$surv[2],
+#                size = 1, 
+#                arrow = arrow(length = unit(0.2, "inches")),
+#                colour = "#5ec962") + 
+#   # visualize median survival time (blue)
+# geom_segment(x = s1_median["median"], xend = s1_median["median"],
+#              # the first y-val must be slightly > 0 for the arrow to print correctly
+#              y = 0.08, yend = 0.5,
+#              size = 1,
+#              arrow = arrow(ends = "first"),
+#              colour = "#21918c") + 
+#   geom_segment(x = 0, xend = s1_median["median"],
+#                y = 0.5, yend = 0.5,
+#                size = 1,
+#                arrow = arrow(ends = "last"),
+#                colour = "#21918c") + 
+#   # create manual legend 
+#   scale_color_manual(name='Measurement',
+#                      breaks=c('3 year survival', 'Median survival time'),
+#                      values=c('3 year survival'='#5ec962',
+#                               'Median survival time'='#21918c')) + 
+#  theme(legend.title=element_text(size=14),
+#        legend.text=element_text(size=11),
+#        legend.position = "topright")
+
 km1 + 
   # visualize 3 year survival (green)
   geom_segment(x = 3, xend = 3,
                y = 0, yend = five_yr_surv$surv[2], 
                size = 1, 
                arrow = arrow(),
-               colour = "#5ec962") +
+               aes(color = "3 year survival")) +
   geom_segment(x = 3, xend = 0,
                y = five_yr_surv$surv[2], yend = five_yr_surv$surv[2],
                size = 1, 
                arrow = arrow(length = unit(0.2, "inches")),
-               colour = "#5ec962") + 
+               aes(color = "3 year survival")) + 
   # visualize median survival time (blue)
 geom_segment(x = s1_median["median"], xend = s1_median["median"],
              # the first y-val must be slightly > 0 for the arrow to print correctly
              y = 0.08, yend = 0.5,
              size = 1,
              arrow = arrow(ends = "first"),
-             colour = "#21918c") + 
+             aes(color = "Median survival time")) + 
   geom_segment(x = 0, xend = s1_median["median"],
                y = 0.5, yend = 0.5,
                size = 1,
                arrow = arrow(ends = "last"),
-               colour = "#21918c")
+               aes(color = "Median survival time")) + 
+  # create manual legend 
+  scale_color_manual(name='Measurement',
+                     breaks=c('3 year survival', 'Median survival time'),
+                     values=c('3 year survival'='#5ec962',
+                              'Median survival time'='#21918c')) + 
+  theme(legend.position = c(0.8, 0.8))
 
 
 ```
@@ -370,9 +394,9 @@ geom_segment(x = s1_median["median"], xend = s1_median["median"],
 
 Up to this point, we have been studying a Kaplan-Meier plot that describes the entire data set (all crown margin repairs). In practice, the objective is often to compare two subgroups from within the data set -- for instance, suppose we are interested in comparing how well crown margin repairs lasted between the root canal treated (RCT) and non-RCT groups. The plot below draws two Kaplan-Meier survival curves -- one for each of these subgroups. We notice that across time, the curve representing the RCT teeth is consistently below the curve representing the non-RCT teeth. This indicates that the curve for the RCT teeth is *dropping (decreasing) faster*, illustrating that the crown margin repairs done on RCT treated teeth do not last as long as the repairs done on non-RCT teeth. 
 
-In addition to the curves in this graph, we also see the confidence intervals at each time point illustrated by the tinted area around each curve. The yellow and purple tinted areas overlap with each other quite a bit, which symbolizes that the difference between crown margin repairs done on RCT teeth and non-RCT teeth is subtle -- the repairs last only slightly longer on the non-RCT teeth.  
+In addition to the curves in this graph, we also see the confidence intervals at each time point illustrated by the shaded area around each curve. The yellow and purple tinted areas overlap with each other quite a bit, which symbolizes that the difference between crown margin repairs done on RCT teeth and non-RCT teeth is subtle -- the repairs last only slightly longer on the non-RCT teeth.  
 
-```{r compare_rct_groups}
+```{r compare_rct_groups, fig.cap="Figure 4: Comparing RCT groups"}
 km3 <- survfit2(Surv(time = Time, event = Event) ~ RCT, data = cmr) %>% 
   ggsurvfit() +
   labs(
@@ -391,7 +415,7 @@ km3
 
 As a second example of comparing Kaplan-Meier plots between groups, let us suppose that we are working in a materials science context, where we are interested in comparing crown margin repairs that were done with glass ionomer (GI) to repairs done resin-modified glass ionomer (RMGI).  We see in the next figure that the survival curve representing the GI group is much lower than the curve for the RMGI group for all times after two years. We also see that the space between the two curves increases over time - the two curves are diverging. The confidence intervals do not overlap much at all after 2.5 years. These survival curves indicate that the crown margin repairs done with RMGI lasted notably longer than the repairs done with GI. There is evidence in this data set that the modification to GI makes a positive impact on the expected lifespan of crown margin repairs. 
 
-```{r}
+```{r rct_curves, fig.cap="Figure 5: Comparing repair materials"}
 km4 <- survfit2(Surv(time = Time, event = Event) ~ Repair_Material,
                 # NB: we are considering only those repairs that were done with GI and Amalgam
                 data = cmr %>% filter(Repair_Material %in% c("RMGI", "GI"))) %>% 
@@ -411,23 +435,44 @@ km4
 
 ### Cox model 
 
-Our final survival analysis tool for this tutorial is a Cox proportional hazards model. This model examines each of the variables (i.e. the independent variables) in relationship the time-to-event outcome. A table summarizes the results of this Cox model using hazard ratios (HR), 95% confidence intervals (CI), and p-values. 
+Our final survival analysis tool for this tutorial is a Cox proportional hazards model. This model examines each of the variables (i.e. the independent variables) in relationship the time-to-event outcome. 
+
+Table 4 summarizes the results of this Cox model using hazard ratios (HR), 95% confidence intervals (CI), and p-values. Hazard ratios (as defined in the \hyperref[sec:dictionary]{Dictionary}) indicate the multiplicative impact of an independent variable on the probability of survival. In the popular Cox regression model, the hazard ratio for an independent variable can be calculated by taking the model coefficient (i.e. the $\beta$ value) for that independent variable and raising $e$ to the power of that $\beta$ value: $e^\beta = \text{HR}$. In Table 4, this step of *exponentiating* model coefficients has already been done. \footnote{To see what `R` code I used to format the table this way, refer to the `analysis.Rmd` files in the GitHub page for this tutorial.}
+
+Now that we have defined hazard ratio, we can interpret some of the hazard ratios from Table 4:  
+  - For repair material glass ionomer (GI), the hazard ratio is 2.59, with a corresponding p-value of 0.008. This result indicates that at any given year, a CMR done with GI is 2.59 times as likely to need a re-intervention than a CMR done with Amalgam (Amal, the reference category). The impact of using GI as the repair material is notably significant at the $\alpha = 0.05$ level. 
+  - For root canal treatment (RCT), the hazard ratio indicates that CMRs placed on root canal treated teeth are 1.56 times as likely to need a re-intervention compared to CMRs placed on non-RCT teeth. The impact of RCT is mildly significant (or 'suggestive') at the $\alpha = 0.05$ level. 
+  - For jaw, the hazard ratio is 0.67 for maxilla (Mx), indicating that CMRs placed in the maxilla are 0.67 times as likely to require re-intervention compared to CMRs placed in the mandible (the reference category). The impact of placing a CMR in the maxilla is not significant at the $\alpha = 0.05$ level. 
+  
+  
+From these examples, notice that hazard ratios bigger than 1 correspond to an increased probability of an event, whereas hazard ratios smaller than 1 correspond to a decreased probability of an event. 
 
 
 ```{r cox_model}
-coxph(Surv(time = Time, event = Event) ~ No_Cases + Age + Gender + CRA + Tooth_Type + Jaw +
-        Repair_Material + Surfaces + No_Surfaces + RCT + Crown_Type + Clinic +
-        Provider_Type,
+# build Cox model 
+coxph(Surv(time = Time, event = Event) ~ Age + Gender + CRA + Tooth_Type + Jaw +
+        Repair_Material + Surfaces + No_Surfaces + RCT + Crown_Type + Provider_Type,
       data = cmr) %>%
-  tbl_regression(exp = TRUE)
+  # create table of results 
+  tbl_regression(exp = TRUE, # this argument does the exponentiating step 
+                 label = table1_labels) %>%
+  # format table 
+  as_kable_extra(format = "latex",
+                 booktabs= TRUE,
+                 caption = "Table 4: Cox model results"
+                 ) %>% 
+  kable_styling(latex_options = c("HOLD_position", "striped"))
+                 
+
 
 
 ```
 
+
 # Dictionary 
 \label{sec:dictionary}
 
-- **Observation**: The unit of study. These units could be people, as in the case of a clinical investigation where each unit of study is a patient. An observation could also be a dental implant, a set of dentures, or a plate of bacteria. Regardless of the research context, the observation is studied by the researcher for a specified amount of time. For each observation, there is a time of entry into the study and a time of last observation. In addition to these dates/times, information about the details of an observation are also recorded. 
+  - **Observation**: The unit of study. These units could be people, as in the case of a clinical investigation where each unit of study is a patient. An observation could also be a dental implant, a set of dentures, or a plate of bacteria. Regardless of the research context, the observation is studied by the researcher for a specified amount of time. For each observation, there is a time of entry into the study and a time of last observation. In addition to these dates/times, information about the details of an observation are also recorded. 
  
   - **Time**: The units of time that have passed since an observation's entry into the study. In time-to-event analysis, the date/time of entry into the study is labeled as 0, and the subsequent units of time (e.g. days, weeks, years) count forward from that starting time. For example, suppose the observations in my study are patients treated in a specific dental clinic, and I am recording time in years. If Patient A enters the study in 2018 and I study that patient until 2022, then I would call 2018 "year 0" and 2022 "year 3." Note that the time of entry into the study often differs among observations. Returning to our example, suppose Patient B enters my study in 2019. In this case, "time 0" for Patient B is 2019. When I make generalizations about all the patients in the study, I would reference "time 0", understanding that this is different calendar years for patients A and B. 
   
