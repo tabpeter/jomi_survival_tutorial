@@ -9,3 +9,4 @@ R/
 submission/
 tutorial_cache/
 tutorial_files/
+*.aux
