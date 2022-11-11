@@ -1,5 +1,5 @@
 ---
-title: "An overview of time-to-event analysis for dental researchers"
+title: "An overview of time-to-event analysis in dental research"
 author: "Tabitha K. Peter"
 date: \today
 output: pdf_document
@@ -11,7 +11,8 @@ header-includes:
  - \hypersetup{colorlinks=true,citecolor=purple,linkcolor=purple,linktocpage=true, urlcolor=purple}
  - \usepackage[labelformat=empty]{caption}
  - \usepackage{xcolor}
-
+editor_options: 
+  chunk_output_type: console
 ---
 
 
@@ -33,7 +34,7 @@ source("R/R.R")
 # Introduction 
 \label{sec:intro}
 
-Welcome to the tutorial "An overview of time-to-event analysis for dental researchers." The objective of this tutorial is to explain the foundational concepts of time-to-event analysis for an audience of dental researchers. After introducing some key terms, I will explain the essential concepts of time-to-event analysis using a data set from the dental research literature. See [this link](https://www.sciencedirect.com/science/article/pii/S000281772100547X?casa_token=criQNRkNLBEAAAAA:nL6pVTDH07s1jyh5Gf_J1Ffsz2JDTmDakeGvRlgAB_rKSkjVynSdt5c_KDlZw7hlDphCLKoH) for the full text of the publication based on a time-to-event analysis of this data set (@Jain2022). 
+The objective of this tutorial is to introduce the foundational concepts of time-to-event analysis for dental researchers. After introducing some key terms, we explain the essential concepts of time-to-event analysis using a data set from the dental research literature. See [this link](https://www.sciencedirect.com/science/article/pii/S000281772100547X?casa_token=criQNRkNLBEAAAAA:nL6pVTDH07s1jyh5Gf_J1Ffsz2JDTmDakeGvRlgAB_rKSkjVynSdt5c_KDlZw7hlDphCLKoH) for details of this data set that was included in a publication (@Jain2022). 
 
 # Word bank 
 \label{sec:wordbank}
@@ -77,25 +78,21 @@ word_bank <- tibble(terms = c("Observation", "Time", "Event", "Censored",
 
 In this extended example, we will analyze a data set with time-to-event information on a set of crown margin repairs. Over the course of 10+ years, 1,002 patients received a crown margin repair treatment at the University of Iowa Dental Clinic. Data were collected for each patient via chart review from electronic dental records. The details of data collection and inclusion/exclusion criteria are available in the original manuscript (@Jain2022). 
 
-Our objective for this tutorial will be to analyze how long the crown margin repairs lasted. \footnote{The analysis presented in this tutorial differs from what is presented in the publication. This is because the primary objective of the approac presented here is didactic.} Our observations are the 1,002 crown margin repairs (CMRs), each representing a unique patient. An 'event' is a documented re-intervention on the CMR (such as replacement or extraction). CMRs that are not documented as having events during the study timeframe are the censored observations. The survival time for each CMR is the time (in years) between the date that the patient received the CMR treatment and the last date that the CMR was documented in the data. 
+Our objective for this tutorial is to analyze how long the crown margin repairs lasted. \footnote{The analysis presented in this tutorial differs from what is presented in the publication. This is because the primary objective of the approac presented here is didactic.} Our observations are the 1,002 crown margin repairs (CMRs), each representing a unique patient. An 'event' is a documented re-intervention on the CMR (such as replacement or extraction). CMRs that are not documented as having events during the study timeframe are the censored observations. The survival time for each CMR is the time (in years) between the date that the patient received the CMR treatment and the last date that the CMR was documented in the data. 
 
 We are interested in studying how several factors impact the lifespan of these CMRs. The factors we study here include: 
 
   - Age: patient's age (years) \footnote{The reader may notice in the descriptive table that there are a couple of patients who are > 100 years old. We confirmed with the clinicians that this is correct.}
   - Sex: patient's sex 
   - Caries Risk Assessment (CRA): the caries risk of the tooth that received the CMR
-  - Tooth Type: Whether the CMR was placed on an anterior (A) or posterior (P) tooth
-  - Jaw: Whether the CMR was placed in the maxillar (Mx) or mandibule (Md)  
-  - Repair material: The material used for the CMR
-  - Surfaces: The type of surface on which the CMR was done (Buccal, lingual, or other)
-  - Number of surfaces: How many surfaces were involved in the CMR
-  - Root canal treatment (RCT): Was the tooth receiving the CMR root canal treated? 
-  - Crown type: The type of crown used for the CMR
-  - Provider: Whether the provider placing the CMR was a faculty member or a student
-
-## Prepare the data set 
-\label{sec:prepdata}
-
+  - Tooth Type: whether the CMR was placed on an anterior (A) or posterior (P) tooth
+  - Jaw: whether the CMR was placed in the maxilla (Mx) or mandibule (Md)  
+  - Repair material: the material used for the CMR
+  - Surfaces: the type of surface on which the CMR was done (Buccal, lingual, or other)
+  - Number of surfaces: how many surfaces were involved in the CMR
+  - Root canal treatment (RCT): was the tooth receiving the CMR root canal treated? 
+  - Crown type: the type of crown used for the CMR
+  - Provider: whether the provider placing the CMR was a faculty member or a student
 
 
 ```{r load_data}
@@ -138,7 +135,7 @@ cmr <- cmr %>%
 ## Descriptive analysis 
 \label{sec:descriptive}
 
-Once I have verified that the data set is ready for analysis, I create a "Table 1" that summarizes each variable in the data set. In Table 1, numeric values (like Age) are summarized with their median and range (min, max) values. Categorial variables are summarized by their counts and percentages. 
+Once we have verified that the data set is ready for analysis, we create a "Table 1" that summarizes each variable in the data set. In Table 1, numeric values (like Age) are summarized with their median and range (min, max) values. Categorical variables are summarized by their counts and percentages. 
 
 ```{r descriptives}
 table1_labels <- list(
@@ -160,12 +157,14 @@ table1 <- tbl_summary(data = cmr %>%
                     dplyr::select(-c(RecordID, Event, No_Cases, Tooth_Number,
                                      Clinic, Date_Repair, End_Date, Failure_Date,
                                      Failure, Last_exam, Failure_Reason)),
-            digits = everything() ~ 2,
+            # digits = everything() ~ 2,
             label = table1_labels,
             statistic = list(
               all_continuous() ~ "{median} ({min}, {max})",
-              all_categorical() ~ "{n} ({p}%)")
-            )
+              all_categorical() ~ "{n} ({p}%)")) %>% 
+  modify_footnote(update = all_stat_cols() ~ "Formats: Median (range), n (%)",
+                  abbreviation = FALSE)
+  
 
 
 table1 %>%
@@ -181,7 +180,7 @@ table1 %>%
 
 ### Timeline chart 
 
-To illustrate the stories of specific patients, I drew a timeline chart (some people call this type of graph a "swimlane diagram"). This kind of diagram lets us put a loupe on our data and see what is going on for an individual patient. 
+To illustrate the stories of specific patients, we drew a timeline chart (some people call this type of graph a "swimlane diagram"). This kind of diagram lets us put a loupe on our data and see what is going on for an individual patient. 
 
 ```{r timeline, fig.cap="Figure 1: Timeline chart"}
 # Create a timeline chart 
@@ -210,7 +209,7 @@ Patient 150 is the only patient in the timeline chart that has an 'event' marker
 
 ## Kaplan-Meier plot 
 
-To get an idea of the overall trajectory of the time that the crown margin repairs are lasting, we may examine a Kaplan-Meier (KM) plot. As time goes on, there are fewer repairs upon which to draw estimates, so our estimates become more uncertain at later years. To visualize this uncertainty, we can add confidence intervals to the plots. A risk table provides details to supplement the general pattern illustrated in the KM plot. 
+To get an idea of the overall trajectory of the time that the crown margin repairs are lasting, we may examine a Kaplan-Meier (KM) plot (Figure 2). As time goes on, there are fewer repairs upon which to draw estimates, so our estimates become more uncertain at later years. To visualize this uncertainty, we can add confidence intervals to the plots. A risk table provides details to supplement the general pattern illustrated in the KM plot. 
 
 ```{r km_plot, fig.cap="Figure 2: Kaplan-Meier plot"}
 # Kaplan Meier (KM) curve 
@@ -265,7 +264,7 @@ By year 12.5, there are no more observations at risk, meaning that all the CMRs 
 
 In most time-to-event analyses, the authors report the median survival time. This is defined as the time by which approximately half of all the observations have had an event. For our CMR example, the median survival time is the number of years by which approximately half of the CMRs required a re-intervention. 
 
-**Keep in mind:** The median survival time is **not** just the median of all the survival time values. When we are talking about median survival, we have to account for the fact that some repairs are censored -- only events that happen during our study can tell us something definitive about survival time! The Kaplan-Meier method for calculating median survival takes censoring into account. \footnote{I chose to do this calculation in `R` with the `survfit` function from the `survival` package.} 
+**Keep in mind:** The median survival time is **not** just the median of all the survival time values. When we are talking about median survival, we have to account for the fact that some repairs are censored -- only events that happen during our study can tell us something definitive about survival time! The Kaplan-Meier method for calculating median survival takes censoring into account. \footnote{We chose to do this calculation in `R` with the `survfit` function from the `survival` package.} 
 
 ```{r median_survival}
 # calculate median survival with the KM method 
@@ -288,11 +287,11 @@ s1_median[c("median", "0.95LCL", "0.95UCL")] %>%
   kable_styling(latex_options = c("HOLD_position"))
 ```
 
-Table 2 (above) shows that the median survival time for the CMRs was about 5.1 years, with a 95\% confidence interval of 4.48 - 5.72 years. Looking back at our KM plot, this estimate makes sense - we observed that the KM curve was at about 0.5 on the vertical axis at the year = 5 mark. 
+Table 2 (above) shows that the median survival time for the CMRs was 5.11 years, with a 95\% confidence interval of 4.48 - 5.72 years. Looking back at our KM plot, this estimate makes sense - we observed that the KM curve was at about 0.5 on the vertical axis at the year = 5 mark. 
 
 ### Nth year survival 
 
-We are also often interested to estiamte the survival probability of a repair making it __ number of years. Below is a table that shows estimates of 1 year, 3 year, and 5 year survival for our CMRs. 
+We are also often interested to estiamte the survival probability of a repair making it $N$ number of years ($N$ can be any number the researcher's choice). Below is a table that shows estimates of 1 year, 3 year, and 5 year survival for our CMRs. 
 
 ```{r nth_year_survival}
 # 1, 3, and 5 year survival -----------------------------------------------
@@ -316,9 +315,9 @@ five_yr_surv_table %>%
 
 ### Plot 3 year survival probability and median survival time 
 
-To show the difference between estimating __ year survival and estimating the median survival time, I can illustrate how these two measurements align with our KM plot. In Figure 3 (below), I show the median survival time and 3 year survival measurements with colored lines. The arrows on the colored lines show where the researcher would start to estimate each of these measurements. For median survival, one begins with survival probability (on the vertical axis). For 3 year survival, one begins with time (on the horizontal axis). 
+To show the difference between estimating $N$ year survival and estimating the median survival time, we can illustrate how these two measurements align with the KM plot. In Figure 3 (below), we show the median survival time and 3 year survival measurements with colored lines. The arrows on the colored lines show where the researcher would start to estimate each of these measurements. For median survival, one begins with survival probability (on the vertical axis). For 3 year survival, one begins with time (on the horizontal axis). 
 
-To keep this illustration from being too visually 'busy', I will leave off the confidence intervals from the KM plot. 
+To keep this illustration from being too visually 'busy', we leave off the confidence intervals from the KM plot. 
 
 ```{r combined_plot, fig.cap="Figure 3: Median survival v. 3-year survival"}
 
@@ -392,12 +391,13 @@ geom_segment(x = s1_median["median"], xend = s1_median["median"],
 
 ### Comparing groups
 
-Up to this point, we have been studying a Kaplan-Meier plot that describes the entire data set (all crown margin repairs). In practice, the objective is often to compare two subgroups from within the data set -- for instance, suppose we are interested in comparing how well crown margin repairs lasted between the root canal treated (RCT) and non-RCT groups. Figure 4 (below) draws two Kaplan-Meier survival curves -- one for each of these subgroups. We notice that across time, the curve representing the RCT teeth is consistently below the curve representing the non-RCT teeth. This indicates that the curve for the RCT teeth is *dropping (decreasing) faster*, illustrating that the crown margin repairs done on RCT treated teeth do not last as long as the repairs done on non-RCT teeth. 
+Up to this point, we have been studying a Kaplan-Meier plot that describes the entire data set (all crown margin repairs). In practice, the objective is often to compare two subgroups from within the data set -- for instance, suppose we are interested in comparing how well crown margin repairs lasted between the root canal treated (RCT) and non-RCT groups. Figure 4 draws two Kaplan-Meier survival curves -- one for each of these subgroups. We notice that across time, the curve representing the RCT teeth is consistently below the curve representing the non-RCT teeth. This indicates that the curve for the RCT teeth is *dropping (decreasing) faster*, illustrating that the crown margin repairs done on RCT treated teeth do not last as long as the repairs done on non-RCT teeth. 
 
-In addition to the curves in this graph, we also see the confidence intervals at each time point illustrated by the shaded area around each curve. The yellow and purple tinted areas overlap with each other quite a bit, which symbolizes that the difference between crown margin repairs done on RCT teeth and non-RCT teeth is subtle -- the repairs last only slightly longer on the non-RCT teeth.  
+In addition to the curves in this graph, we also see the confidence intervals at each time point illustrated by the shaded area around each curve. The yellow and purple tinted areas overlap with each other quite a bit, which symbolizes that the difference between crown margin repairs done on RCT teeth and non-RCT teeth is subtle -- the repairs last only slightly longer on the non-RCT teeth. Corresponding to these observations, the p-value from the log-rank test shows that this difference is significant at the $\alpha = 0.05$ level. 
 
-```{r compare_rct_groups, fig.cap="Figure 4: Comparing RCT groups"}
-km3 <- survfit2(Surv(time = Time, event = Event) ~ RCT, data = cmr) %>% 
+```{r compare_rct_groups, fig.cap="Figure 4: Comparing RCT groups", fig.width=7.5}
+km3 <- survfit2(Surv(time = Time, event = Event) ~ RCT, data = cmr) 
+km3 %>% 
   ggsurvfit() +
   labs(
     x = "Years (after repair)",
@@ -407,18 +407,20 @@ km3 <- survfit2(Surv(time = Time, event = Event) ~ RCT, data = cmr) %>%
   add_risktable() + 
   scale_color_viridis(discrete = TRUE) + 
   scale_fill_viridis(discrete = TRUE) +
-  theme_bw() 
-
-km3
+  theme_bw() + 
+  annotate("text", x = 10, y = 0.75,
+           label = glue::glue("{survfit2_p(km3)}"))
 ```
 
 
-As a second example of comparing Kaplan-Meier plots between groups, let us suppose that we are working in a materials science context, where we are interested in comparing crown margin repairs that were done with glass ionomer (GI) to repairs done resin-modified glass ionomer (RMGI).  We see in Figure 5 that the survival curve representing the GI group is much lower than the curve for the RMGI group for all times after two years. We also see that the space between the two curves increases over time - the two curves are diverging. The confidence intervals do not overlap much at all after 2.5 years. These survival curves indicate that the crown margin repairs done with RMGI lasted notably longer than the repairs done with GI. There is evidence in this data set that the modification to GI makes a positive impact on the expected lifespan of crown margin repairs. 
+As a second example of comparing Kaplan-Meier plots between groups, let us suppose that we are working in a materials science context, where we are interested in comparing crown margin repairs that were done with glass ionomer (GI) to repairs done resin-modified glass ionomer (RMGI).  We see in Figure 5 that the survival curve representing the GI group is much lower than the curve for the RMGI group for all times after two years. We also see that the space between the two curves increases over time - the two curves are diverging. The confidence intervals do not overlap much at all after 2.5 years. These survival curves indicate that the crown margin repairs done with RMGI lasted notably longer than the repairs done with GI. There is evidence in this data set that the modification to GI makes a positive impact on the expected lifespan of crown margin repairs. Again, corresponding to these observations, the p-value from the log-rank test shows that this difference is notably significant at the $\alpha = 0.05$ level.
 
 ```{r rct_curves, fig.cap="Figure 5: Comparing repair materials"}
 km4 <- survfit2(Surv(time = Time, event = Event) ~ Repair_Material,
                 # NB: we are considering only those repairs that were done with GI and Amalgam
-                data = cmr %>% filter(Repair_Material %in% c("RMGI", "GI"))) %>% 
+                data = cmr %>% filter(Repair_Material %in% c("RMGI", "GI"))) 
+
+km4 %>% 
   ggsurvfit() +
   labs(
     x = "Years (after repair)",
@@ -428,9 +430,8 @@ km4 <- survfit2(Surv(time = Time, event = Event) ~ Repair_Material,
   add_risktable() + 
   scale_color_viridis(discrete = TRUE) + 
   scale_fill_viridis(discrete = TRUE) +
-  theme_bw() 
-
-km4
+  theme_bw()  + 
+  annotate("text", x = 7.5, y = 0.75, label = glue::glue("{survfit2_p(km4)}"))
 ```
 
 ### Cox model 
@@ -501,9 +502,9 @@ In this tutorial, we have studied how to describe and analyze time-to-event ('su
   
 # Acknowledgements and further reading 
 
-- In my own time--to-event analyses work using `R`, I have often referred to a tutorial by Emily Zaboor (@Zaboor2022). 
+-@Zaboor2022 has published a detailed tutorial for survival (time-to-event) analysis in `R`. 
 
-- @Clark2003 has published a series of tutorials which are more in-depth than what I provide here 
+- @Clark2003 has published a series of tutorials which are more in-depth than what we provide here 
 
 # References 
 \label{sec:references}
