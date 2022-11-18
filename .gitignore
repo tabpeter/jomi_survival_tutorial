@@ -4,8 +4,6 @@
 .Ruserdata
 .DS_Store
 *.gdoc
-data/
-R/
 submission/
 tutorial_cache/
 tutorial_files/

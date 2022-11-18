@@ -196,7 +196,8 @@ timelines <- ggplot(cmr[example_patients, ], aes(x = RecordID, y = Time)) +
   labs(x = "Record ID") + 
   coord_flip() + 
   scale_color_viridis(discrete = TRUE) + 
-  theme_bw()
+  theme_bw() + 
+  guides(colour = guide_legend(override.aes = list(size=8)))
 
 (timelines)
 
