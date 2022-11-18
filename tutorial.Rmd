@@ -27,7 +27,7 @@ knitr::opts_chunk$set(
 
 
 ```{r source_calls, message=FALSE}
-source("R/R.R")
+source("R.R")
 ```
 
 
@@ -79,7 +79,7 @@ word_bank <- tibble(terms = c("Observation", "Time", "Event", "Censored",
 
 In this extended example, we will analyze a data set with time-to-event information on a set of crown margin repairs. Over the course of 10+ years, 1,002 patients received a crown margin repair treatment at the University of Iowa Dental Clinic. Data were collected for each patient via chart review from electronic dental records. The details of data collection and inclusion/exclusion criteria are available in the original manuscript (@Jain2022). 
 
-Our objective for this tutorial is to analyze how long the crown margin repairs lasted. \footnote{The analysis presented in this tutorial differs from what is presented in the publication. This is because the primary objective of the approach presented here is didactic.} Our observations are the 1,002 crown margin repairs (CMRs), each representing a unique patient. An 'event' is a documented re-intervention on the CMR (such as replacement or extraction). CMRs that are not documented as having events during the study timeframe are the censored observations. The survival time for each CMR is the time (in years) between the date that the patient received the CMR treatment and the last date that the CMR was documented in the data. 
+Our objective for this tutorial is to analyze how long the crown margin repairs lasted. Our observations are the 1,002 crown margin repairs (CMRs), each representing a unique patient. An 'event' is a documented re-intervention on the CMR (such as replacement or extraction). CMRs that are not documented as having events during the study timeframe are the censored observations. The survival time for each CMR is the time (in years) between the date that the patient received the CMR treatment and the last date that the CMR was documented in the data.\footnote{The analysis presented in this tutorial differs from what is presented in the publication. This is because the primary objective of the approach presented here is didactic.}
 
 We are interested in studying how several factors impact the lifespan of these CMRs. The factors we study here include: 
 
@@ -97,7 +97,7 @@ We are interested in studying how several factors impact the lifespan of these C
 
 
 ```{r load_data}
-cmr <- read_csv("data/cmr.csv")
+cmr <- read_csv("cmr.csv")
 ```
 
 ```{r first_look, include=FALSE}
@@ -163,6 +163,7 @@ table1 <- tbl_summary(data = cmr %>%
             statistic = list(
               all_continuous() ~ "{median} ({min}, {max})",
               all_categorical() ~ "{n} ({p}%)")) %>% 
+  bold_labels() %>%
   modify_footnote(update = all_stat_cols() ~ "Formats: Median (range), n (%)",
                   abbreviation = FALSE)
   
@@ -173,7 +174,7 @@ table1 %>%
                  booktabs = TRUE,
                  caption = "Table 1: Description of data",
                  longtable = TRUE) %>%
-  kable_styling(latex_options = c("HOLD_position", "striped", "repeat_header"))
+  kable_styling(latex_options = c("striped", "repeat_header"))
 
 
 ```
@@ -197,7 +198,7 @@ timelines <- ggplot(cmr[example_patients, ], aes(x = RecordID, y = Time)) +
   coord_flip() + 
   scale_color_viridis(discrete = TRUE) + 
   theme_bw() + 
-  guides(colour = guide_legend(override.aes = list(size=8)))
+  guides(colour = guide_legend(override.aes = list(size=4)))
 
 (timelines)
 
@@ -438,7 +439,7 @@ km4 %>%
 
 #### Log-rank test
 
-In Figures 4 & 5, the p-value shown on the graph is the result of a **log-rank test**. The log rank test is a popular test in time-to-event (survival) analysis settings where the goal is to compare two or more groups of observations *without* controlling for any other factors. As a statistical tool, the log-rank test examines the data to see if there is evidence against this null hypothesis: "there is no difference in survival between the groups being compared."  \footnote{i.e. it is like the [Cohran-Mantel-Hanzel (CMH) test for categorical data](https://en.wikipedia.org/wiki/Cochran%E2%80%93Mantel%E2%80%93Haenszel_statistics).} In other words, the log-rank test can be thought of as a test of whether the survival curves for the groups are identical (overlapping) or not (@LaMorte2016). For Figure 4, the log-rank test is evaluating whether the survival curves for the RCT and non-RCT CMRs are the same, and there is evidence (p = 0.009) against the null hypothesis -- that is, there is evidence that the RCT and non-RCT CMRs do not have the same survival curves. Similarly, Figure 5 shows evidence from a log-rank tests that CMRs done with RMGI and GI do not have the same survival curve (p < 0.001). 
+In Figures 4 & 5, the p-value shown on the graph is the result of a **log-rank test**. The log-rank test is a popular test in time-to-event (survival) analysis settings where the goal is to compare two or more groups of observations *without* controlling for any other factors. As a statistical tool, the log-rank test examines the data to see if there is evidence against this null hypothesis: "there is no difference in survival between the groups being compared."  \footnote{i.e. it is like the [Cohran-Mantel-Hanzel (CMH) test for categorical data](https://en.wikipedia.org/wiki/Cochran%E2%80%93Mantel%E2%80%93Haenszel_statistics).} In other words, the log-rank test can be thought of as a test of whether the survival curves for the groups are identical (overlapping) or not (@LaMorte2016). For Figure 4, the log-rank test is evaluating whether the survival curves for the RCT and non-RCT CMRs are the same, and there is evidence (p = 0.009) against the null hypothesis -- that is, there is evidence that the RCT and non-RCT CMRs do not have the same survival curves. Similarly, Figure 5 shows evidence from a log-rank tests that CMRs done with RMGI and GI do not have the same survival curve (p < 0.001). 
 
 There are several variations of the log-rank test that may be better for comparing groups in certain research settings. Some variants of the log-rank test focus on identifying differences between survival curves earlier in the follow-up time, while other variants focus on differences later in the follow-up time. Consult a biostatistician during the design phase of a proposed study in order to discern if one of the variations of the log-rank test is appropriate. 
 
@@ -470,6 +471,7 @@ coxph(Surv(time = Time, event = Event) ~ Age + Gender + CRA + Tooth_Type + Jaw +
   # create table of results 
   tbl_regression(exp = TRUE, # this argument does the exponentiating step 
                  label = table1_labels) %>%
+  bold_labels() %>%
   # format table 
   as_kable_extra(format = "latex",
                  booktabs= TRUE,
