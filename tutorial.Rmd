@@ -46,7 +46,7 @@ We begin our exploration of time-to-event analysis by highlighting some key term
 word_bank <- tibble(terms = c("Observation", "Time", "Event", "Censored",
                               "Survival time", "Median survival time",
                               "Nth year survival", "Kaplan-Meier plot",
-                              "Hazard ratio", "Cox model"
+                              "Hazard ratio","Log-rank test","Cox model"
                               ),
                     # goal for self: word limit on definitions = 10 words  
                     defs = c("Unit of study",
@@ -58,7 +58,8 @@ word_bank <- tibble(terms = c("Observation", "Time", "Event", "Censored",
                              "Proportion of observations still 'alive' year N",
                              "Curves that tell the story",
                              "Measure for comparing proability of 'event'",
-                             "Tool that estimates hazard ratios"
+                             "Tool for comparing groups without controlling for other factors",
+                             "Tool for comparing groups while controlling for other factors"
                              ))
 
 (word_bank %>%
@@ -67,7 +68,7 @@ word_bank <- tibble(terms = c("Observation", "Time", "Event", "Censored",
       col.names = c("Terms", "Brief definition")) %>% 
   kable_paper(full_width=F) %>%
   column_spec(1:2,
-              color=rep(c("#440154", "#21918c"), 5)))
+              color=c(rep(c("#440154", "#21918c"), 5), "#440154")))
               # background = spec_color(1:5, alpha = 0.5)))
 
 ```
@@ -78,7 +79,7 @@ word_bank <- tibble(terms = c("Observation", "Time", "Event", "Censored",
 
 In this extended example, we will analyze a data set with time-to-event information on a set of crown margin repairs. Over the course of 10+ years, 1,002 patients received a crown margin repair treatment at the University of Iowa Dental Clinic. Data were collected for each patient via chart review from electronic dental records. The details of data collection and inclusion/exclusion criteria are available in the original manuscript (@Jain2022). 
 
-Our objective for this tutorial is to analyze how long the crown margin repairs lasted. \footnote{The analysis presented in this tutorial differs from what is presented in the publication. This is because the primary objective of the approac presented here is didactic.} Our observations are the 1,002 crown margin repairs (CMRs), each representing a unique patient. An 'event' is a documented re-intervention on the CMR (such as replacement or extraction). CMRs that are not documented as having events during the study timeframe are the censored observations. The survival time for each CMR is the time (in years) between the date that the patient received the CMR treatment and the last date that the CMR was documented in the data. 
+Our objective for this tutorial is to analyze how long the crown margin repairs lasted. \footnote{The analysis presented in this tutorial differs from what is presented in the publication. This is because the primary objective of the approach presented here is didactic.} Our observations are the 1,002 crown margin repairs (CMRs), each representing a unique patient. An 'event' is a documented re-intervention on the CMR (such as replacement or extraction). CMRs that are not documented as having events during the study timeframe are the censored observations. The survival time for each CMR is the time (in years) between the date that the patient received the CMR treatment and the last date that the CMR was documented in the data. 
 
 We are interested in studying how several factors impact the lifespan of these CMRs. The factors we study here include: 
 
@@ -86,7 +87,7 @@ We are interested in studying how several factors impact the lifespan of these C
   - Sex: patient's sex 
   - Caries Risk Assessment (CRA): the caries risk of the tooth that received the CMR
   - Tooth Type: whether the CMR was placed on an anterior (A) or posterior (P) tooth
-  - Jaw: whether the CMR was placed in the maxilla (Mx) or mandibule (Md)  
+  - Jaw: whether the CMR was placed in the maxilla (Mx) or mandible (Md)  
   - Repair material: the material used for the CMR
   - Surfaces: the type of surface on which the CMR was done (Buccal, lingual, or other)
   - Number of surfaces: how many surfaces were involved in the CMR
@@ -245,13 +246,13 @@ km2
 
 Whereas the timeline chart illustrated the stories of individual patients, the KM plot communicates the overarching story of the entire group of patients. The vertical ('y') axis of the KM plot shows the proportion (fraction) of CMRs that have **not** yet required a re-intervention. This value can be interpreted as the probability that a repair is intact. The horizontal ('x') axis shows time, where year 0 is the time that patients received the CMR treatments. The black line that looks like a staircase is the KM curve, representing the KM estimates of survival probability at each time. The colored area around that black line represents the 95\% confidence interval. 
 
-At year 0, all patients have a CMR intact, and so the proportion on the vertical axis is at 1. We say that the probability of having an intact CMR at year 0 is 100\%. As time moves onward (from left to right), some patients start to need re-interventions. At each re-intervention, the KM curve drops down, giving it the 'staircase' appearance. The downward path of the KM curve illstrates that the probability of a CMR being intact is decreasing over time. By year 5, about half of the CMRs have required re-interventions. By year 10, the probability of a repair being intact is less than 25\%. 
+At year 0, all patients have a CMR intact, and so the proportion on the vertical axis is at 1. We say that the probability of having an intact CMR at year 0 is 100\%. As time moves onward (from left to right), some patients start to need re-interventions. At each re-intervention, the KM curve drops down, giving it the 'staircase' appearance. The downward path of the KM curve illustrates that the probability of a CMR being intact is decreasing over time. By year 5, about half of the CMRs have required re-interventions. By year 10, the probability of a repair being intact is less than 25\%. 
 
 Simultaneous with the downward path of the KM curve is the widening of the colored area. In the first two years, the colored area keeps tightly around the KM curve; however, by year 10 the colored area is quite widespread. This illustrates that as more CMRs require re-interventions, there is increasing uncertainty about the Kaplan-Meier estimate of survival probability. Generalizing beyond our example, confidence intervals typically get wider over time, reflecting the uncertainty in the KM survival probability estimation. 
 
 The risk table beneath the KM plot is lined up with the horizontal axis, indicating that the risk table information is also dependent on time. At each time point, the risk table shows two values: the number of CMRs 'at risk' at that time (top number), and the number of CMRs that have had 'events' up to that time (bottom number). "At risk" means the number of observations which have 1) not yet had an event and 2) have not yet been censored. "Events" indicates the total number of observations that have had events up to a specific time. 
 
-At year 0, all 1,002 CMRs are at risk. We do notice that four CMRs are marked as having events in year 0 - at first, this does not make clinical sense. Such a data phenomena is often a sign of a bookeeping issue, and that is the case here. For these four individuals, the researcher doing the chart review/data extraction should go back and read the clinical notes to determine the best way to document what happened to the patients represented by these four CMRs. In a typical time-to-event analysis, the number of events at the baseline time is 0. 
+At year 0, all 1,002 CMRs are at risk. We do notice that four CMRs are marked as having events in year 0 - at first, this does not make clinical sense. Such a data phenomena is often a sign of a bookkeeping issue, and that is the case here. For these four individuals, the researcher doing the chart review/data extraction should go back and read the clinical notes to determine the best way to document what happened to the patients represented by these four CMRs. In a typical time-to-event analysis, the number of events at the baseline time is 0. 
 
 Moving forward in time, we see that at 2.5 years there are 188 CMRs which have already required re-interventions. A total of 421 of our initial 1,002 CMRs are still at risk at this time, meaning we are still collecting data from the patients with these CMRs and none of them have required a re-intervention yet. Notice that 188 + 421 does not add up to 1,002 -- the other 393 CMRs are neither at risk nor have they required re-intervention, which means they have been *censored* by year 2.5. 
 
@@ -291,7 +292,7 @@ Table 2 (above) shows that the median survival time for the CMRs was 5.11 years,
 
 ### Nth year survival 
 
-We are also often interested to estiamte the survival probability of a repair making it $N$ number of years ($N$ can be any number the researcher's choice). Below is a table that shows estimates of 1 year, 3 year, and 5 year survival for our CMRs. 
+We are also often interested to estimate the survival probability of a repair making it $N$ number of years ($N$ can be any number the researcher's choice). Below is a table that shows estimates of 1 year, 3 year, and 5 year survival for our CMRs. 
 
 ```{r nth_year_survival}
 # 1, 3, and 5 year survival -----------------------------------------------
@@ -415,7 +416,7 @@ km3 %>%
 
 As a second example of comparing Kaplan-Meier plots between groups, let us suppose that we are working in a materials science context, where we are interested in comparing crown margin repairs that were done with glass ionomer (GI) to repairs done resin-modified glass ionomer (RMGI).  We see in Figure 5 that the survival curve representing the GI group is much lower than the curve for the RMGI group for all times after two years. We also see that the space between the two curves increases over time - the two curves are diverging. The confidence intervals do not overlap much at all after 2.5 years. These survival curves indicate that the crown margin repairs done with RMGI lasted notably longer than the repairs done with GI. There is evidence in this data set that the modification to GI makes a positive impact on the expected lifespan of crown margin repairs. Again, corresponding to these observations, the p-value from the log-rank test shows that this difference is notably significant at the $\alpha = 0.05$ level.
 
-```{r rct_curves, fig.cap="Figure 5: Comparing repair materials"}
+```{r compare_repair_groups, fig.cap="Figure 5: Comparing repair materials"}
 km4 <- survfit2(Surv(time = Time, event = Event) ~ Repair_Material,
                 # NB: we are considering only those repairs that were done with GI and Amalgam
                 data = cmr %>% filter(Repair_Material %in% c("RMGI", "GI"))) 
@@ -434,9 +435,17 @@ km4 %>%
   annotate("text", x = 7.5, y = 0.75, label = glue::glue("{survfit2_p(km4)}"))
 ```
 
-### Cox model 
+#### Log-rank test
 
-Our final survival analysis tool for this tutorial is a Cox proportional hazards model. This model examines each of the variables (i.e. the independent variables) in relationship the time-to-event outcome. 
+In Figures 4 & 5, the p-value shown on the graph is the result of a **log-rank test**. The log rank test is a popular test in time-to-event (survival) analysis settings where the goal is to compare two or more groups of observations *without* controlling for any other factors. As a statistical tool, the log-rank test examines the data to see if there is evidence against this null hypothesis: "there is no difference in survival between the groups being compared."  \footnote{i.e. it is like the [Cohran-Mantel-Hanzel (CMH) test for categorical data](https://en.wikipedia.org/wiki/Cochran%E2%80%93Mantel%E2%80%93Haenszel_statistics).} In other words, the log-rank test can be thought of as a test of whether the survival curves for the groups are identical (overlapping) or not (@LaMorte2016). For Figure 4, the log-rank test is evaluating whether the survival curves for the RCT and non-RCT CMRs are the same, and there is evidence (p = 0.009) against the null hypothesis -- that is, there is evidence that the RCT and non-RCT CMRs do not have the same survival curves. Similarly, Figure 5 shows evidence from a log-rank tests that CMRs done with RMGI and GI do not have the same survival curve (p < 0.001). 
+
+There are several variations of the log-rank test that may be better for comparing groups in certain research settings. Some variants of the log-rank test focus on identifying differences between survival curves earlier in the follow-up time, while other variants focus on differences later in the follow-up time. Consult a biostatistician during the design phase of a proposed study in order to discern if one of the variations of the log-rank test is appropriate. 
+
+
+
+#### Cox model 
+
+Our final survival analysis tool for this tutorial is a Cox proportional hazards model. This model is designed to examine the impact of **multiple factors** in relationship the time-to-event outcome. In practice, the Cox models is often used when there is one particular grouping or factor of interest and several other factors for which the investigator wants to control. Using our example data, we fit a Cox model that examines the relationship between repair material and the time until re-intervention while controlling for age, sex, CRA status, tooth type, jaw, number of surfaces, RCT status, crown type, and provider type. 
 
 Table 4 summarizes the results of this Cox model using hazard ratios (HR), 95% confidence intervals (CI), and p-values. Hazard ratios (as defined in the \hyperref[sec:dictionary]{Dictionary}) indicate the multiplicative impact of an independent variable on the probability of survival. In the popular Cox regression model, the hazard ratio for an independent variable can be calculated by taking the model coefficient (i.e. the $\beta$ value) for that independent variable and raising $e$ to the power of that $\beta$ value: $e^\beta = \text{HR}$. In Table 4, this step of *exponentiating* model coefficients has already been done. \footnote{To see what `R` code I used to format the table this way, refer to the `analysis.Rmd` files in the GitHub page for this tutorial.}
 
@@ -498,11 +507,13 @@ In this tutorial, we have studied how to describe and analyze time-to-event ('su
   
   - **Hazard ratios**: A multiplicative factor used to compare the survival probability between groups. Suppose that in our denture example, we compare dentures made with material A to dentures made with material B. If we find that the hazard ratio for dentures made with material A is 2.5, then the data are showing that at any given time, those dentures made with material A are 2.5 times as likely to need replacement compared to dentures made with material B. Keep in mind that a hazard ratio of 1 means lack of association, a hazard ratio greater than 1 suggests an increased risk, and a hazard ratio below 1 suggests a smaller risk.  @Dawson2021 provide an extended explanation of this concept. 
   
-  - **Cox (proportional hazards) model**: This is a reference to the foundational publication by @Cox1972. In brief, Cox proposed a method for a regression-like analysis which is specially crafted for time-to-event data. The Cox regression model lets us make generalizations about the impact of independent variables on the outcome of interest using hazard ratios. We will see an example of this kind of model later in the tutorial. 
+  - **Log-rank test**: A statistical test used to compare the survival curves between two or more groups. This method does not allow for the controlling of other factors, *i.e.* this is a bivariate method. 
+  
+  - **Cox (proportional hazards) model**: This is a reference to the foundational publication by @Cox1972. In brief, Cox proposed a method for a regression-like analysis which is specially crafted for time-to-event data. "Regression-like" means that the method is useful for considering several independent variables simultaneously, as in the case where one wants to study the effect of one variable while controlling for several other factors. The Cox regression model lets us make generalizations about the impact of independent variables on the outcome of interest using hazard ratios. 
   
 # Acknowledgements and further reading 
 
--@Zaboor2022 has published a detailed tutorial for survival (time-to-event) analysis in `R`. 
+- @Zaboor2022 has published a detailed tutorial for survival (time-to-event) analysis in `R`. 
 
 - @Clark2003 has published a series of tutorials which are more in-depth than what we provide here 
 
