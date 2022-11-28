@@ -1,10 +1,9 @@
 ---
 title: "An overview of time-to-event analysis in dental research"
-author: "Tabitha K. Peter, Erliang Zeng"
-phone: "(319) 335 - 7302"
+author: ""
 date: \today
-output: pdf_document
 bibliography: references/cmr.bib
+output: pdf_document
 header-includes: 
  - \usepackage{bbm}
  - \usepackage{unicode}
@@ -27,7 +26,7 @@ knitr::opts_chunk$set(
 ```
 
 
-```{r source_calls, message=FALSE}
+```{r source_calls, message=FALSE, eval=FALSE}
 source("R.R")
 ```
 
@@ -39,7 +38,7 @@ Time-to-event (survival) analysis is an integral tool in the wheelhouse of the d
 # Introduction 
 \label{sec:intro}
 
-The objective of this tutorial is to introduce the foundational concepts of time-to-event analysis for dental researchers. After introducing some key terms, we explain the essential concepts of time-to-event analysis using a data set from the dental research literature. See [this link](https://www.sciencedirect.com/science/article/pii/S000281772100547X?casa_token=criQNRkNLBEAAAAA:nL6pVTDH07s1jyh5Gf_J1Ffsz2JDTmDakeGvRlgAB_rKSkjVynSdt5c_KDlZw7hlDphCLKoH) for details of this data set that was included in a publication (@Jain2022). 
+The objective of this tutorial is to introduce the foundational concepts of time-to-event analysis for dental researchers. After introducing some key terms, we explain the essential concepts of time-to-event analysis using a data set from the dental research literature. 
 
 # Word bank 
 \label{sec:wordbank}
@@ -50,7 +49,14 @@ We begin our exploration of time-to-event analysis by highlighting some key term
 # Extended example with dental data  
 \label{sec:example}
 
-In this extended example, we will analyze a data set with time-to-event information on a set of crown margin repairs. Over the course of 10+ years, 1,002 patients received a crown margin repair treatment at the University of Iowa Dental Clinic. Data were collected for each patient via chart review from electronic dental records. The details of data collection and inclusion/exclusion criteria are available in the original manuscript (@Jain2022). 
+In this extended example, we will analyze a data set with time-to-event information on a set of crown margin repairs. Over the course of 10+ years, 1,002 patients received a crown margin repair treatment at the XX Dental Clinic. Data were collected for each patient via chart review from electronic dental records. 
+
+```{r citation, include=FALSE}
+## ADD the following to the final draft
+
+# The details of data collection and inclusion/exclusion criteria are available in the original manuscript (@Jain2022). 
+```
+
 
 Our objective for this tutorial is to analyze how long the crown margin repairs lasted. Our observations are the 1,002 crown margin repairs (CMRs), each representing a unique patient. An 'event' is a documented re-intervention on the CMR (such as replacement or extraction). CMRs that are not documented as having events during the study timeframe are the censored observations. The survival time for each CMR is the time (in years) between the date that the patient received the CMR treatment and the last date that the CMR was documented in the data.\footnote{The analysis presented in this tutorial differs from what is presented in the publication. This is because the primary objective of the approach presented here is didactic.}
 
@@ -69,11 +75,11 @@ We are interested in studying how several factors impact the lifespan of these C
   - Provider: whether the provider placing the CMR was a faculty member or a student
 
 
-```{r load_data}
+```{r load_data, eval=FALSE}
 cmr <- read_csv("cmr.csv")
 ```
 
-```{r first_look, include=FALSE}
+```{r first_look, include=FALSE, eval=FALSE}
 # First look at the data 
 # See what changes we need to make 
 dplyr::glimpse(cmr) # notice: lots of options for 'clinic', and some categories are labeled as numbers! 
@@ -81,7 +87,7 @@ table(cmr$Clinic, useNA = "always") # hmmm... need to combine some categories
 
 ```
 
-```{r data_prep}
+```{r data_prep, eval=FALSE}
 # Make some formatting changes
 cmr <- cmr %>%
   # collapse categories for clinic (we will need this for analysis)
@@ -115,7 +121,7 @@ Once we have verified that the data set is ready for analysis, we create a table
 
 To illustrate the stories of specific patients, we drew a timeline chart (some people call this type of graph a "swimlane diagram"). This kind of diagram lets us put a loupe on our data and see what is going on for an individual patient. 
 
-The timeline chart tells the stories of five patients from the CMR study. Patient 438 had a CMR repair that lasted for more than six years. During those six years, the patient had dental visits at the UI Dental Clinic, and so the researchers could verify that the patient's CMR was intact. After those 6+ years, we do not know what happened to this patient - there is no more data available for that person's CMR. Perhaps this person moved out of town, or started going to another clinic. In this case, Patient 438 is counted as 'censored', meaning this person's CMR did not need a re-intervention during the time that the patient was part of the study. Similarly, Patient 359 and Patient 1 are also censored, meaning that neither of their CMRs needed a re-intervention during the time of the study. Patient 17 has a censoring mark (the dark circle) at time 0 - this means that Patient 17 received a CMR treatment from the UI Dental Clinic during the time that the researchers were collecting data, but never returned to that clinic again. The researchers at UI do not have any information about Patient 17 beyond the CMR treatment, and so this patient is 'censored at baseline.' 
+The timeline chart tells the stories of five patients from the CMR study. Patient 438 had a CMR repair that lasted for more than six years. During those six years, the patient had dental visits at the XX Dental Clinic, and so the researchers could verify that the patient's CMR was intact. After those 6+ years, we do not know what happened to this patient - there is no more data available for that person's CMR. Perhaps this person moved out of town, or started going to another clinic. In this case, Patient 438 is counted as 'censored', meaning this person's CMR did not need a re-intervention during the time that the patient was part of the study. Similarly, Patient 359 and Patient 1 are also censored, meaning that neither of their CMRs needed a re-intervention during the time of the study. Patient 17 has a censoring mark (the dark circle) at time 0 - this means that Patient 17 received a CMR treatment from the XX Dental Clinic during the time that the researchers were collecting data, but never returned to that clinic again. The researchers at XX do not have any information about Patient 17 beyond the CMR treatment, and so this patient is 'censored at baseline.' 
 
 Patient 150 is the only patient in the timeline chart that has an 'event' marker, indicating that this patient's CMR needed a re-intervention after six years. Maybe this patient needed an extraction, or the teeth involved in the CMR required treatment for caries. This falls within the definition of 'event' that the researchers chose before analyzing the data for this study. 
 
@@ -228,10 +234,13 @@ In this tutorial, we have studied how to describe and analyze time-to-event ('su
 
 - @Clark2003 has published a series of tutorials which are more in-depth than what we provide here 
 
-\newpage
+\clearpage
 
-# Tables 
-```{r word_bank, warning=FALSE}
+# References 
+\label{sec:references}
+
+
+```{r word_bank, warning=FALSE, eval=FALSE}
 # silence warning: it is related to the color choices for the word bank 
 word_bank <- tibble(terms = c("Observation", "Time", "Event", "Censored",
                               "Survival time", "Median survival time",
@@ -259,12 +268,13 @@ word_bank <- tibble(terms = c("Observation", "Time", "Event", "Censored",
       caption = "Table 1: Word Bank") %>% 
   kable_paper(full_width=F) %>%
   column_spec(1:2,
-              color=c(rep(c("#440154", "#21918c"), 5), "#440154")))
+              color=c(rep(c("#440154", "#21918c"), 5), "#440154"))) %>%
+  kable_styling(latex_options = c("HOLD_position"))
               # background = spec_color(1:5, alpha = 0.5)))
 
 ```
 
-```{r descriptives}
+```{r descriptives, eval=FALSE}
 table1_labels <- list(
   Age ~ "Age (yrs)",
   Gender ~ "Sex",
@@ -300,12 +310,12 @@ table1 %>%
                  booktabs = TRUE,
                  caption = "Table 2: Description of data",
                  longtable = TRUE) %>%
-  kable_styling(latex_options = c("striped", "repeat_header"))
+  kable_styling(latex_options = c("striped", "repeat_header", "HOLD_position"))
 
 
 ```
 
-```{r median_survival}
+```{r median_survival, eval=FALSE}
 # calculate median survival with the KM method 
 s1 <- survfit(Surv(Time, Event) ~ 1, data = cmr) 
 
@@ -326,7 +336,7 @@ s1_median[c("median", "0.95LCL", "0.95UCL")] %>%
   kable_styling(latex_options = c("HOLD_position"))
 ```
 
-```{r nth_year_survival}
+```{r nth_year_survival, eval=FALSE}
 # 1, 3, and 5 year survival -----------------------------------------------
 five_yr_surv <- summary(survfit(Surv(Time, Event) ~ 1, data = cmr), times = c(1, 3, 5))
 
@@ -345,7 +355,7 @@ five_yr_surv_table %>%
 
 ```
 
-```{r cox_model}
+```{r cox_model, eval=FALSE}
 # build Cox model 
 coxph(Surv(time = Time, event = Event) ~ Age + Gender + CRA + Tooth_Type + Jaw +
         Repair_Material + Surfaces + No_Surfaces + RCT + Crown_Type + Provider_Type,
@@ -366,10 +376,7 @@ coxph(Surv(time = Time, event = Event) ~ Age + Gender + CRA + Tooth_Type + Jaw +
 
 ```
 
-\newpage
-# Figures 
-
-```{r timeline, fig.cap="Figure 1: Timeline chart"}
+```{r timeline, fig.cap="Figure 1: Timeline chart", eval=FALSE}
 # Create a timeline chart 
 set.seed(52246) # this means the same patients are chosen each time I run this code
 example_patients <- sample(1:nrow(cmr), size = 5)
@@ -389,7 +396,7 @@ timelines <- ggplot(cmr[example_patients, ], aes(x = RecordID, y = Time)) +
 
 ```
 
-```{r km_plot, fig.cap="Figure 2: Kaplan-Meier plot"}
+```{r km_plot, fig.cap="Figure 2: Kaplan-Meier plot", eval=FALSE}
 # Kaplan Meier (KM) curve 
 
 km1 <- survfit2(Surv(time = Time, event = Event) ~ 1, data = cmr) %>%
@@ -420,7 +427,7 @@ km2
 
 ```
 
-```{r combined_plot, fig.cap="Figure 3: Median survival v. 3-year survival"}
+```{r combined_plot, fig.cap="Figure 3: Median survival v. 3-year survival", eval=FALSE}
 km1 + 
   # visualize 3 year survival (green)
   geom_segment(x = 3, xend = 3,
@@ -455,7 +462,7 @@ geom_segment(x = s1_median["median"], xend = s1_median["median"],
 
 ```
 
-```{r compare_rct_groups, fig.cap="Figure 4: Comparing RCT groups", fig.width=7.5}
+```{r compare_rct_groups, fig.cap="Figure 4: Comparing RCT groups", fig.width=7.5, eval=FALSE}
 km3 <- survfit2(Surv(time = Time, event = Event) ~ RCT, data = cmr) 
 km3 %>% 
   ggsurvfit() +
@@ -472,7 +479,7 @@ km3 %>%
            label = glue::glue("{survfit2_p(km3)}"))
 ```
 
-```{r compare_repair_groups, fig.cap="Figure 5: Comparing repair materials"}
+```{r compare_repair_groups, fig.cap="Figure 5: Comparing repair materials", eval=FALSE}
 km4 <- survfit2(Surv(time = Time, event = Event) ~ Repair_Material,
                 # NB: we are considering only those repairs that were done with GI and Amalgam
                 data = cmr %>% filter(Repair_Material %in% c("RMGI", "GI"))) 
@@ -490,13 +497,6 @@ km4 %>%
   theme_bw()  + 
   annotate("text", x = 7.5, y = 0.75, label = glue::glue("{survfit2_p(km4)}"))
 ```
-
-\clearpage
-
-# References 
-\label{sec:references}
-
-\bibliography{references/cmr.bib}
 
 
 
